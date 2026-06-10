@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DLQ Console</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #fff3cd; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: #721c24; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0; }
+        #log { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 0 0 8px 8px; height: 500px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-weight: bold; border: 1px solid #f5c6cb; border-top: none; }
+        h2 { margin: 0; font-size: 20px; }
+        .empty-state { opacity: 0.7; font-style: italic; font-weight: normal; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Dead Letter Queue (DLQ) Vault</h2>
+    </div>
+    <div id="log"><span class="empty-state">Waiting for failed messages...</span></div>
+</div>
+
+<script>
+    async function fetchDlq() {
+        try {
+            const res = await fetch('/api/dlq');
+            const messages = await res.json();
+
+            if(messages.length > 0) {
+                const logDiv = document.getElementById('log');
+                logDiv.innerHTML = messages.map(m => `<div>${m}</div>`).join('');
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+        } catch(err) {
+            console.error("Failed to fetch DLQ messages", err);
+        }
+    }
+    setInterval(fetchDlq, 1000);
+</script>
+</body>
+</html>

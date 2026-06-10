@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Producer Console</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .control-panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 4px; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .quick-actions { display: flex; gap: 10px; padding-top: 15px; border-top: 1px solid #eee; }
+        #log { background: #1e1e1e; color: #4af626; padding: 15px; border-radius: 8px; height: 300px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        h2, h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Message Producer Console</h2>
+
+    <div class="control-panel">
+        <h3>Send Custom Message</h3>
+        <div class="input-group">
+            <input type="text" id="customPayload" placeholder="Type your custom message here..." onkeypress="handleKeyPress(event)">
+            <button class="btn-primary" onclick="sendCustomMessage()">Send Message</button>
+        </div>
+
+        <div class="quick-actions">
+            <button class="btn-success" onclick="sendMessage('Package-' + Math.floor(Math.random() * 1000))">Quick: Valid Package</button>
+            <button class="btn-danger" onclick="sendMessage('Package-' + Math.floor(Math.random() * 1000) + ':fail')">Quick: Poison Package</button>
+        </div>
+    </div>
+
+    <h3>Transmission Log:</h3>
+    <div id="log"></div>
+</div>
+
+<script>
+    // Allows sending by pressing "Enter" on the keyboard
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') sendCustomMessage();
+    }
+
+    function sendCustomMessage() {
+        const input = document.getElementById('customPayload');
+        const payload = input.value.trim();
+        if (!payload) return; // Do nothing if empty
+
+        sendMessage(payload);
+        input.value = ''; // Clear input field after sending
+    }
+
+    async function sendMessage(payload) {
+        try {
+            const res = await fetch('/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payload: payload })
+            });
+            const data = await res.json();
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Sent: ${data.payload}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight; // Auto-scroll to bottom
+        } catch (err) {
+            console.error('Failed to send message', err);
+        }
+    }
+</script>
+</body>
+</html>

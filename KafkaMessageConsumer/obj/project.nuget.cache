@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "CzyGxC00Pe4=",
+  "success": true,
+  "projectFilePath": "/home/ziad/workspace/dis/KafkaMessageConsumer/KafkaMessageConsumer.csproj",
+  "expectedPackageFiles": [
+    "/home/ziad/.nuget/packages/confluent.kafka/2.14.2/confluent.kafka.2.14.2.nupkg.sha512",
+    "/home/ziad/.nuget/packages/librdkafka.redist/2.14.2/librdkafka.redist.2.14.2.nupkg.sha512"
+  ],
+  "logs": []
+}

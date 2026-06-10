@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Worker Console</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #e9ecef; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: #343a40; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0; margin-bottom: 0; }
+        #log { background: #212529; color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; height: 500px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; }
+        .success { color: #28a745; }
+        .error { color: #ffc107; }
+        .dlq { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; }
+        h2 { margin: 0; font-size: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Worker Processing Console (Logs)</h2>
+    </div>
+    <div id="log">Loading logs...</div>
+</div>
+
+<script>
+    async function fetchLogs() {
+        try {
+            const res = await fetch('/api/logs');
+            const logs = await res.json();
+            const logDiv = document.getElementById('log');
+
+            if (logs.length === 0) return;
+
+            logDiv.innerHTML = logs.map(l => {
+                if (l.includes('[Success]')) return `<div class="success">${l}</div>`;
+                if (l.includes('[Error]')) return `<div class="error">${l}</div>`;
+                if (l.includes('[DLQ Route]')) return `<div class="dlq">${l}</div>`;
+                if (l.includes('Started') || l.includes('Subscribed')) return `<div class="info">${l}</div>`;
+                return `<div>${l}</div>`;
+            }).join('');
+
+            logDiv.scrollTop = logDiv.scrollHeight;
+        } catch (err) {
+            console.error("Failed to fetch logs", err);
+        }
+    }
+    setInterval(fetchLogs, 1000);
+</script>
+</body>
+</html>
