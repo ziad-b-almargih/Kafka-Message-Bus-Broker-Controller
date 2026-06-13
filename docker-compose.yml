@@ -44,7 +44,7 @@ services:
     container_name: kafka-main-producer
     restart: unless-stopped
     ports:
-      - "7001:8080"
+      - "${PRODUCER_PORT:-7001}:8080"
     environment:
       - KAFKA_SERVER=kafka:29092
       - ASPNETCORE_APPLICATIONNAME=KafkaMessageMainProducer
@@ -59,7 +59,7 @@ services:
     container_name: kafka-worker-consumer
     restart: unless-stopped
     ports:
-      - "7002:8080"
+      - "${CONSUMER_PORT:-7002}:8080"
     environment:
       - KAFKA_SERVER=kafka:29092
       - ASPNETCORE_APPLICATIONNAME=KafkaMessageConsumer
@@ -73,7 +73,7 @@ services:
     container_name: kafka-dlq-manager
     restart: unless-stopped
     ports:
-      - "7003:8080"
+      - "${DLQ_PORT:-7003}:8080"
     environment:
       - KAFKA_SERVER=kafka:29092
       - ASPNETCORE_APPLICATIONNAME=KafkaMessageDlq

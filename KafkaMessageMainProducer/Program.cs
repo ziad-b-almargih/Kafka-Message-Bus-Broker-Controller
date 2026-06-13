@@ -4,6 +4,7 @@ using Confluent.Kafka;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 var config = new ProducerConfig { BootstrapServers = Environment.GetEnvironmentVariable("KAFKA_SERVER") ?? "localhost:9092" };

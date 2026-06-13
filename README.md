@@ -42,12 +42,29 @@ Utilizing `await Task.Yield();` at the beginning of the `BackgroundService` exec
 
 ---
 
+## ⚙️ Configuration
+
+### Port Configuration (`.env`)
+
+The external host ports for each service are defined in the `.env` file located in the project root. Edit this file before starting the stack to avoid conflicts with other running services:
+
+```env
+PRODUCER_PORT=7001   # Producer Console
+CONSUMER_PORT=7002   # Worker/Consumer Console
+DLQ_PORT=7003        # DLQ Vault Console
+```
+
+Docker Compose reads this file automatically — no extra flags needed.
+
+---
+
 ## 🚀 Execution & Deployment Guide
 
 The entire multi-service mesh can be built and deployed natively using a single orchestrated command. There is no need to manually pre-configure topics or download binary dependencies locally.
 
-1. Open a terminal instance inside the root directory containing your `docker-compose.yml` file.
-2. Execute the following command to completely purge legacy volumes, rebuild application layers, and start the system in detached mode:
+1. *(Optional)* Edit `.env` to change the default ports if needed.
+2. Open a terminal instance inside the root directory containing your `docker-compose.yml` file.
+3. Execute the following command to completely purge legacy volumes, rebuild application layers, and start the system in detached mode:
 
 ```bash
 sudo docker compose down -v && sudo docker compose up --build -d
@@ -62,7 +79,7 @@ sudo docker compose down -v && sudo docker compose up --build -d
 
 ## 📊 Management Dashboards
 
-Once operational, individual web portals can be accessed locally to interact with and observe the event pipeline in real time:
+Once operational, individual web portals can be accessed locally to interact with and observe the event pipeline in real time. Each service serves its dashboard at the **root URL** — no `/index.html` suffix is needed:
 
 * **Producer Console:** 🔗 [http://localhost:7001](http://localhost:7001)  
     *Use this interface to input custom message streams or invoke quick actions to generate pseudo-randomized traffic.*
@@ -72,3 +89,5 @@ Once operational, individual web portals can be accessed locally to interact wit
     
 * **DLQ Isolation Vault:** 🔗 [http://localhost:7003](http://localhost:7003)  
     *View quarantined payloads that failed all internal validation and retry thresholds.*
+
+> **Note:** If you changed the default ports in `.env`, replace `7001`, `7002`, or `7003` in the URLs above with your configured values.

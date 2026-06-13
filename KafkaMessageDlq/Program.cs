@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<DlqService>();
 var app = builder.Build();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapGet("/api/dlq", () => Results.Ok(DlqService.DeadLetters));

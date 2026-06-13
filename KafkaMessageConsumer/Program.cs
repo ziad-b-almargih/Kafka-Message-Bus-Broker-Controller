@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHostedService<WorkerService>();
 var app = builder.Build();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapGet("/api/logs", () => Results.Ok(WorkerService.Logs));
