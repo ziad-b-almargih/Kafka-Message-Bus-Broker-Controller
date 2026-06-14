@@ -68,7 +68,7 @@
     let ok = 0, err = 0, dlq = 0;
     async function fetchLogs() {
         try {
-            const res = await fetch('/api/logs');
+            const res = await fetch((window.BASE_URL || '') + '/api/logs');
             const logs = await res.json();
             if (logs.length === 0) return;
             ok = 0; err = 0; dlq = 0;
