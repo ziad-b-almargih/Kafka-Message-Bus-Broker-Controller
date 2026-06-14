@@ -1,34 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DLQ Console</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #fff3cd; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: #721c24; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0; }
-        #log { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 0 0 8px 8px; height: 500px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-weight: bold; border: 1px solid #f5c6cb; border-top: none; }
-        h2 { margin: 0; font-size: 20px; }
-        .empty-state { opacity: 0.7; font-style: italic; font-weight: normal; }
+        :root {
+            --bg:#0e1420; --panel:#161e2e; --panel-2:#1b2436; --line:#26324a;
+            --ink:#cdd8e8; --muted:#73839c; --accent:#f5a623; --hit:#37d3b0;
+            --danger:#ef6f6c; --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,monospace;
+            --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;min-height:100vh}
+        .topbar{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.4rem;border-bottom:1px solid var(--line)}
+        .dot{width:11px;height:11px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 4px #ef6f6c22,0 0 12px var(--danger);flex-shrink:0}
+        .topbar h1{font-size:1.15rem;font-weight:650;letter-spacing:.2px}
+        .topbar p{font-size:.8rem;color:var(--muted)}
+        .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;padding:.15rem .5rem;border-radius:6px;background:#ef6f6c1a;color:var(--danger);border:1px solid #ef6f6c3a;margin-left:.5rem;vertical-align:middle}
+        main{padding:1.4rem;max-width:860px;margin:0 auto}
+        .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+        .card-header{display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.2rem;border-bottom:1px solid var(--line)}
+        .card-header h2{font-size:1rem;font-weight:650}
+        .counter{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+        #log{padding:1rem 1.2rem;height:500px;overflow-y:auto;font-family:var(--mono);font-size:.82rem;display:flex;flex-direction:column;gap:.35rem}
+        #log::-webkit-scrollbar{width:6px}
+        #log::-webkit-scrollbar-track{background:var(--panel-2)}
+        #log::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+        .msg{background:var(--panel-2);border-left:2px solid var(--danger);border-radius:8px 0 0 8px;padding:.45rem .75rem;color:var(--ink)}
+        .msg .ts{color:var(--muted);margin-right:.5rem}
+        .empty-state{color:var(--muted);font-style:italic;padding:.4rem 0}
+        .pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:.4rem;vertical-align:middle;animation:blink 1.4s ease-in-out infinite}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
     </style>
+    <script src="config.js"></script>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h2>Dead Letter Queue (DLQ) Vault</h2>
+<header class="topbar">
+    <span class="dot"></span>
+    <div>
+        <h1>Dead Letter Queue <span class="badge">DLQ VAULT</span></h1>
+        <p>Failed message sink — unprocessable events accumulate here</p>
     </div>
-    <div id="log"><span class="empty-state">Waiting for failed messages...</span></div>
-</div>
+</header>
+<main>
+    <div class="card">
+        <div class="card-header">
+            <h2><span class="pulse-dot"></span>Failed Messages</h2>
+            <span class="counter" id="msgCount">0 entries</span>
+        </div>
+        <div id="log"><span class="empty-state">Waiting for failed messages...</span></div>
+    </div>
+</main>
 
 <script>
     async function fetchDlq() {
         try {
-            const res = await fetch('/api/dlq');
+            const res = await fetch((window.BASE_URL || '') + '/api/dlq');
             const messages = await res.json();
-
-            if(messages.length > 0) {
-                const logDiv = document.getElementById('log');
-                logDiv.innerHTML = messages.map(m => `<div>${m}</div>`).join('');
+            const logDiv = document.getElementById('log');
+            const countEl = document.getElementById('msgCount');
+            if (messages.length > 0) {
+                countEl.textContent = messages.length + ' entr' + (messages.length === 1 ? 'y' : 'ies');
+                const now = new Date().toLocaleTimeString('en-US', {hour12: false});
+                logDiv.innerHTML = messages.map(m =>
+                    `<div class="msg"><span class="ts">${now}</span>${m}</div>`
+                ).join('');
                 logDiv.scrollTop = logDiv.scrollHeight;
             }
         } catch(err) {

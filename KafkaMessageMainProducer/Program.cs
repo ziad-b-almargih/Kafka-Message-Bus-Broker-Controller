@@ -7,6 +7,10 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+var baseUrl = Environment.GetEnvironmentVariable("BASE_URL") ?? "";
+app.MapGet("/config.js", () =>
+    Results.Content($"window.BASE_URL = '{baseUrl}';", "application/javascript"));
+
 var config = new ProducerConfig { BootstrapServers = Environment.GetEnvironmentVariable("KAFKA_SERVER") ?? "localhost:9092" };
 var producer = new ProducerBuilder<Null, string>(config).Build();
 

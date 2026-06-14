@@ -8,6 +8,10 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+var baseUrl = Environment.GetEnvironmentVariable("BASE_URL") ?? "";
+app.MapGet("/config.js", () =>
+    Results.Content($"window.BASE_URL = '{baseUrl}';", "application/javascript"));
+
 app.MapGet("/api/logs", () => Results.Ok(WorkerService.Logs));
 
 app.Run();

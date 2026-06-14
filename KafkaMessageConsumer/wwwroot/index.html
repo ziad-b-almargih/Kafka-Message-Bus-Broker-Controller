@@ -1,51 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Worker Console</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #e9ecef; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { background: #343a40; color: white; padding: 15px 20px; border-radius: 8px 8px 0 0; margin-bottom: 0; }
-        #log { background: #212529; color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; height: 500px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; }
-        .success { color: #28a745; }
-        .error { color: #ffc107; }
-        .dlq { color: #dc3545; font-weight: bold; }
-        .info { color: #17a2b8; }
-        h2 { margin: 0; font-size: 20px; }
+        :root {
+            --bg:#0e1420; --panel:#161e2e; --panel-2:#1b2436; --line:#26324a;
+            --ink:#cdd8e8; --muted:#73839c; --accent:#f5a623; --hit:#37d3b0;
+            --danger:#ef6f6c; --warn:#f5a623;
+            --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,monospace;
+            --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;min-height:100vh}
+        .topbar{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.4rem;border-bottom:1px solid var(--line)}
+        .dot{width:11px;height:11px;border-radius:50%;background:var(--hit);box-shadow:0 0 0 4px #37d3b022,0 0 12px var(--hit);flex-shrink:0}
+        .topbar h1{font-size:1.15rem;font-weight:650;letter-spacing:.2px}
+        .topbar p{font-size:.8rem;color:var(--muted)}
+        .instruments{display:flex;gap:.6rem;margin-left:auto;flex-wrap:wrap}
+        .instr{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:.35rem .75rem;min-width:90px}
+        .instr-k{display:block;font-size:.66rem;color:var(--muted);letter-spacing:.5px}
+        .instr-v{display:block;font-family:var(--mono);font-size:.9rem;font-weight:600}
+        .instr-v.ok{color:var(--hit)} .instr-v.err{color:var(--danger)} .instr-v.warn{color:var(--warn)}
+        main{padding:1.4rem;max-width:860px;margin:0 auto}
+        .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+        .card-header{display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.2rem;border-bottom:1px solid var(--line)}
+        .card-header h2{font-size:1rem;font-weight:650}
+        .btn-ghost{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:.3rem .75rem;cursor:pointer;font-size:.78rem;font-family:var(--sans);transition:.15s}
+        .btn-ghost:hover{border-color:var(--accent);color:var(--ink)}
+        #log{padding:.9rem 1.2rem;height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem;font-family:var(--mono);font-size:.82rem}
+        #log::-webkit-scrollbar{width:6px}
+        #log::-webkit-scrollbar-track{background:var(--panel-2)}
+        #log::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+        .entry{background:var(--panel-2);border-radius:8px;padding:.4rem .75rem;border-left:2px solid var(--line)}
+        .entry.success{border-left-color:var(--hit);color:var(--hit)}
+        .entry.error{border-left-color:var(--warn);color:var(--warn)}
+        .entry.dlq{border-left-color:var(--danger);color:var(--danger)}
+        .entry.info{border-left-color:var(--accent);color:var(--accent)}
+        .entry.neutral{color:var(--ink)}
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h2>Worker Processing Console (Logs)</h2>
+<header class="topbar">
+    <span class="dot"></span>
+    <div>
+        <h1>Worker Processing Console</h1>
+        <p>Real-time worker logs &amp; message processing pipeline</p>
     </div>
-    <div id="log">Loading logs...</div>
-</div>
+    <div class="instruments">
+        <div class="instr"><span class="instr-k">SUCCESS</span><span class="instr-v ok" id="cntOk">0</span></div>
+        <div class="instr"><span class="instr-k">ERRORS</span><span class="instr-v warn" id="cntErr">0</span></div>
+        <div class="instr"><span class="instr-k">DLQ ROUTES</span><span class="instr-v err" id="cntDlq">0</span></div>
+    </div>
+</header>
+<main>
+    <div class="card">
+        <div class="card-header">
+            <h2>Log Stream</h2>
+            <button class="btn-ghost" id="clearBtn">Clear</button>
+        </div>
+        <div id="log">Loading logs...</div>
+    </div>
+</main>
 
 <script>
+    let ok = 0, err = 0, dlq = 0;
     async function fetchLogs() {
         try {
             const res = await fetch('/api/logs');
             const logs = await res.json();
-            const logDiv = document.getElementById('log');
-
             if (logs.length === 0) return;
-
+            ok = 0; err = 0; dlq = 0;
+            const logDiv = document.getElementById('log');
             logDiv.innerHTML = logs.map(l => {
-                if (l.includes('[Success]')) return `<div class="success">${l}</div>`;
-                if (l.includes('[Error]')) return `<div class="error">${l}</div>`;
-                if (l.includes('[DLQ Route]')) return `<div class="dlq">${l}</div>`;
-                if (l.includes('Started') || l.includes('Subscribed')) return `<div class="info">${l}</div>`;
-                return `<div>${l}</div>`;
+                let cls = 'neutral';
+                if (l.includes('[Success]')) { cls = 'success'; ok++; }
+                else if (l.includes('[Error]'))  { cls = 'error'; err++; }
+                else if (l.includes('[DLQ Route]')) { cls = 'dlq'; dlq++; }
+                else if (l.includes('Started') || l.includes('Subscribed')) cls = 'info';
+                return `<div class="entry ${cls}">${l}</div>`;
             }).join('');
-
             logDiv.scrollTop = logDiv.scrollHeight;
-        } catch (err) {
+            document.getElementById('cntOk').textContent = ok;
+            document.getElementById('cntErr').textContent = err;
+            document.getElementById('cntDlq').textContent = dlq;
+        } catch(err) {
             console.error("Failed to fetch logs", err);
         }
     }
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        document.getElementById('log').innerHTML = '';
+    });
     setInterval(fetchLogs, 1000);
+    fetchLogs();
 </script>
 </body>
 </html>
